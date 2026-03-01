@@ -26,6 +26,8 @@ struct FloatingTranscriptOverlay: View {
                 .typography(.bodyLarge)
                 .foregroundStyle(hasText ? colors.onSurface : colors.onSurfaceVariant)
                 .lineLimit(4)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentTransition(.numericText())
                 .animation(.easeOut(duration: 0.15), value: session.partialText)

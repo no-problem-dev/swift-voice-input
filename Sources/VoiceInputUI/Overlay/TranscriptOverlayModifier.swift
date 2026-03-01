@@ -13,10 +13,24 @@ struct TranscriptOverlayModifier: ViewModifier {
     let onConfirm: (String) -> Void
 
     @Environment(\.spacingScale) private var spacing
+    @State private var contentHeight: CGFloat = 0
 
     func body(content: Content) -> some View {
+        let overlayGap = spacing.md
+
         content
-            .overlay(alignment: .top) {
+            .background {
+                GeometryReader { proxy in
+                    Color.clear
+                        .onAppear {
+                            contentHeight = proxy.size.height
+                        }
+                        .onChange(of: proxy.size.height) { _, newValue in
+                            contentHeight = newValue
+                        }
+                }
+            }
+            .overlay(alignment: .bottom) {
                 if session.isActive {
                     FloatingTranscriptOverlay(
                         session: session,
@@ -25,8 +39,8 @@ struct TranscriptOverlayModifier: ViewModifier {
                             session.reset()
                         }
                     )
-                    .padding(.horizontal, spacing.md)
-                    .offset(y: -(spacing.xl))
+                    .padding(.horizontal, overlayGap)
+                    .padding(.bottom, contentHeight + overlayGap)
                     .transition(.asymmetric(
                         insertion: .scale(scale: 0.95).combined(with: .opacity),
                         removal: .opacity
