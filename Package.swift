@@ -12,6 +12,7 @@ let package = Package(
         .library(name: "VoiceInputUI", targets: ["VoiceInputUI"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/swiftlang/swift-docc-plugin", from: "1.4.0"),
         .package(url: "https://github.com/no-problem-dev/swift-design-system.git", .upToNextMajor(from: "1.0.23")),
     ],
     targets: [
