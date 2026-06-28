@@ -1,6 +1,22 @@
 import Foundation
 
 /// 音声認識で発生しうるエラー
+///
+/// `SpeechRecognizer` および `VoiceInputSession` から throw / Result.failure で返される。
+/// `LocalizedError` に準拠しており、`errorDescription` でユーザー向けメッセージを提供する。
+///
+/// ```swift
+/// switch error {
+/// case .microphoneDenied:
+///     // 設定アプリへ誘導
+/// case .speechRecognitionDenied:
+///     // 設定アプリへ誘導
+/// case .unavailable:
+///     // 代替手段を提示
+/// case .engineFailure(let message):
+///     // ログ記録
+/// }
+/// ```
 public enum SpeechRecognitionError: Error, Sendable, Equatable, LocalizedError {
     /// マイク権限が拒否されている
     case microphoneDenied

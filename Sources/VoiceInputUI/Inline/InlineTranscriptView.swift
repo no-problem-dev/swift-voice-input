@@ -22,7 +22,7 @@ import VoiceInput
 public struct InlineTranscriptView: View {
 
     private let session: VoiceInputSession
-    private let onConfirm: (String) -> Void
+    private let onTranscript: (String) -> Void
 
     @Environment(\.colorPalette) private var colors
     @Environment(\.spacingScale) private var spacing
@@ -33,14 +33,14 @@ public struct InlineTranscriptView: View {
         onTranscript: @escaping (String) -> Void
     ) {
         self.session = session
-        self.onConfirm = onTranscript
+        self.onTranscript = onTranscript
     }
 
     public var body: some View {
         if session.isActive {
             TranscriptContent(
                 session: session,
-                onConfirm: onConfirm,
+                onConfirm: onTranscript,
                 onCancel: { session.reset() }
             )
             .padding(spacing.md)
