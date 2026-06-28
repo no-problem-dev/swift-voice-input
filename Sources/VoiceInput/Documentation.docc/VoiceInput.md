@@ -44,6 +44,8 @@ actor WhisperRecognizer: SpeechRecognizer {
 }
 ```
 
+SwiftUI コンポーネントが必要な場合は `VoiceInputUI` モジュールを追加します。`VoiceInputUI` は `VoiceInputSession` を受け取るマイクトグルボタン（`VoiceInputButton`）、フロー内に配置するインラインプレビュー（`InlineTranscriptView`）、任意の View に後付けできるフローティングオーバーレイ modifier（`.voiceInputOverlay(session:onTranscript:)`）を提供します。`VoiceInput` はバックエンドと状態管理のみを担い、UI の詳細は `VoiceInputUI` に委ねる設計になっています。
+
 ## Topics
 
 ### Essentials
