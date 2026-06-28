@@ -4,9 +4,9 @@
 
 ## Overview
 
-`VoiceInput` は iOS / macOS 向けの音声入力 Swift パッケージです。`SpeechRecognizer` プロトコルで認識エンジンを抽象化し、`AsyncStream` でリアルタイムの部分テキストをストリーミング配信します。
+`VoiceInput` は iOS / macOS 向けの音声入力 Swift パッケージ。`SpeechRecognizer` プロトコルで認識エンジンを抽象化し、`AsyncStream` でリアルタイムの部分テキストをストリーミング配信する。
 
-`VoiceInputSession` は `@Observable` な状態管理クラスで、認識の開始・停止・テキスト確定をシンプルな API で提供します。
+`VoiceInputSession` は `@Observable` な状態管理クラスで、認識の開始・停止・テキスト確定をシンプルな API で提供する。
 
 ```swift
 import VoiceInput
@@ -23,7 +23,7 @@ Text(session.partialText)
 let text = session.confirm()
 ```
 
-`SpeechRecognizer` プロトコルに準拠した Actor を実装すれば、Whisper やローカル LLM など任意のバックエンドを差し込めます。
+`SpeechRecognizer` プロトコルに準拠した Actor を実装すれば、Whisper やローカル LLM など任意のバックエンドを差し込める。
 
 ```swift
 actor WhisperRecognizer: SpeechRecognizer {
@@ -44,24 +44,24 @@ actor WhisperRecognizer: SpeechRecognizer {
 }
 ```
 
-SwiftUI コンポーネントが必要な場合は `VoiceInputUI` モジュールを追加します。`VoiceInputUI` は `VoiceInputSession` を受け取るマイクトグルボタン（`VoiceInputButton`）、フロー内に配置するインラインプレビュー（`InlineTranscriptView`）、任意の View に後付けできるフローティングオーバーレイ modifier（`.voiceInputOverlay(session:onTranscript:)`）を提供します。`VoiceInput` はバックエンドと状態管理のみを担い、UI の詳細は `VoiceInputUI` に委ねる設計になっています。
+SwiftUI コンポーネントが必要な場合は `VoiceInputUI` モジュールを追加する。`VoiceInputUI` は `VoiceInputSession` を受け取るマイクトグルボタン（`VoiceInputButton`）、フロー内に配置するインラインプレビュー（`InlineTranscriptView`）、任意の View に後付けできるフローティングオーバーレイ modifier（`.voiceInputOverlay(session:onTranscript:)`）を提供する。`VoiceInput` はバックエンドと状態管理のみを担い、UI の詳細は `VoiceInputUI` に委ねる設計。
 
 ## Topics
 
-### Essentials
+### はじめに
 
 - <doc:GettingStarted>
 
-### Session Management
+### セッション管理
 
 - ``VoiceInputSession``
 
-### Recognition Protocol
+### 認識プロトコル
 
 - ``SpeechRecognizer``
 - ``SpeechRecognitionResult``
 - ``SpeechRecognitionError``
 
-### Built-in Engine
+### 組み込みエンジン
 
 - ``AppleSpeechRecognizer``

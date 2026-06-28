@@ -24,11 +24,17 @@ public final class VoiceInputSession {
 
     // MARK: - State
 
+    /// 音声入力セッションの状態
     public enum State: Equatable, Sendable {
+        /// 待機中（初期状態またはリセット後）
         case idle
+        /// 権限リクエスト中（マイク・音声認識の許可待ち）
         case requesting
+        /// 音声認識中
         case listening
+        /// 停止後の短い遷移期間（`.listening` → `.idle` の間）
         case processing
+        /// エラー発生（権限拒否・エンジン障害など）
         case error(SpeechRecognitionError)
     }
 

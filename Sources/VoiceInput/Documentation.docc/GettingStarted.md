@@ -1,10 +1,10 @@
-# Getting Started with VoiceInput
+# VoiceInput をはじめる
 
-音声入力機能をアプリに組み込む手順を説明します。
+音声入力機能をアプリに組み込む手順を説明する。
 
-## Installation
+## インストール
 
-`Package.swift` の `dependencies` に追加します。
+`Package.swift` の `dependencies` に追加する。
 
 ```swift
 dependencies: [
@@ -12,7 +12,7 @@ dependencies: [
 ]
 ```
 
-次に、ターゲットの `dependencies` に `VoiceInput` を追加します。
+次に、ターゲットの `dependencies` に `VoiceInput` を追加する。
 
 ```swift
 .target(
@@ -23,7 +23,7 @@ dependencies: [
 )
 ```
 
-SwiftUI コンポーネントも使用する場合は `VoiceInputUI` も追加してください。
+SwiftUI コンポーネントも使用する場合は `VoiceInputUI` も追加する。
 
 ```swift
 .product(name: "VoiceInputUI", package: "swift-voice-input"),
@@ -31,16 +31,16 @@ SwiftUI コンポーネントも使用する場合は `VoiceInputUI` も追加�
 
 ## Info.plist の権限設定
 
-音声入力にはマイクと音声認識の権限が必要です。`Info.plist` に以下のキーを追加してください。
+音声入力にはマイクと音声認識の権限が必要。`Info.plist` に以下のキーを追加する。
 
 - `NSMicrophoneUsageDescription` — マイクを使用する理由の説明文
 - `NSSpeechRecognitionUsageDescription` — 音声認識を使用する理由の説明文
 
-## Basic Usage
+## 基本的な使い方
 
 ### 音声入力の開始と停止
 
-``VoiceInputSession`` を `@State` で保持し、`toggle()` で開始・停止を切り替えます。
+``VoiceInputSession`` を `@State` で保持し、`toggle()` で開始・停止を切り替える。
 
 ```swift
 import VoiceInput
@@ -58,7 +58,7 @@ class MyViewModel {
 
 ### リアルタイムテキストの取得
 
-`session.partialText` を観察すると、発話中に逐次更新されるテキストを取得できます。確定テキストは `session.transcript` で参照できます。
+`session.partialText` を観察すると、発話中に逐次更新されるテキストを取得できる。確定テキストは `session.transcript` で参照できる。
 
 ```swift
 // リアルタイムの部分テキスト（発話中に随時更新）
@@ -70,7 +70,7 @@ Text(session.transcript)
 
 ### 認識結果の確定
 
-`confirm()` を呼ぶと現在のテキストを返し、セッションをリセットします。
+`confirm()` を呼ぶと現在のテキストを返し、セッションをリセットする。
 
 ```swift
 let text = session.confirm()
@@ -80,7 +80,7 @@ let text = session.confirm()
 
 ### 状態の監視
 
-`session.state` で現在の認識状態を把握できます。
+`session.state` で現在の認識状態を把握できる。
 
 ```swift
 switch session.state {
@@ -100,7 +100,7 @@ case .error(let error):
 
 ### カスタム認識エンジンの差し込み
 
-``SpeechRecognizer`` プロトコルに準拠した Actor を ``VoiceInputSession/init(recognizer:locale:)`` に渡します。
+``SpeechRecognizer`` プロトコルに準拠した Actor を ``VoiceInputSession/init(recognizer:locale:)`` に渡す。
 
 ```swift
 let session = VoiceInputSession(

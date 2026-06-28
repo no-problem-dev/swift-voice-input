@@ -24,6 +24,7 @@ public struct VoiceInputButton: View {
     @Environment(\.colorPalette) private var colors
     @Environment(\.motion) private var motion
 
+    /// - Parameter session: 操作対象の音声入力セッション
     public init(session: VoiceInputSession) {
         self.session = session
     }

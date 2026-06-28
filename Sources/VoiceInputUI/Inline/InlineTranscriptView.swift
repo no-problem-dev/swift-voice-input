@@ -28,6 +28,9 @@ public struct InlineTranscriptView: View {
     @Environment(\.spacingScale) private var spacing
     @Environment(\.radiusScale) private var radius
 
+    /// - Parameters:
+    ///   - session: 操作対象の音声入力セッション
+    ///   - onTranscript: ユーザーが確認ボタンをタップしたときに確定テキストを渡して呼ばれるクロージャ
     public init(
         session: VoiceInputSession,
         onTranscript: @escaping (String) -> Void

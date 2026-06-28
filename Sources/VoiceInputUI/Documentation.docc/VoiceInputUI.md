@@ -4,13 +4,13 @@
 
 ## Overview
 
-`VoiceInputUI` は `VoiceInput` モジュールの `VoiceInputSession` をフロントエンドで扱うための SwiftUI コンポーネント集です。マイクトグルボタン・インラインテキストプレビュー・フローティングオーバーレイの 3 つのプリミティブで構成されており、既存のフォームや入力欄に最小限の変更で音声入力機能を追加できます。
+`VoiceInputUI` は `VoiceInput` モジュールの `VoiceInputSession` をフロントエンドで扱うための SwiftUI コンポーネント集。マイクトグルボタン・インラインテキストプレビュー・フローティングオーバーレイの 3 つのプリミティブで構成されており、既存のフォームや入力欄に最小限の変更で音声入力機能を追加できる。
 
-`VoiceInputButton` はマイクアイコンのトグルボタンです。タップするたびに `VoiceInputSession.toggle()` を呼び出し、リスニング中はパルスアニメーションと赤色アイコンに変化します。権限拒否時は自動的に設定アプリへ誘導するアラートを表示するため、権限エラー処理を自前で実装する必要がありません。
+`VoiceInputButton` はマイクアイコンのトグルボタン。タップするたびに `VoiceInputSession.toggle()` を呼び出し、リスニング中はパルスアニメーションと赤色アイコンに変化する。権限拒否時は自動的に設定アプリへ誘導するアラートを表示するため、権限エラー処理を自前で実装する必要がない。
 
-`InlineTranscriptView` はレイアウトフロー内に直接配置するプレビューです。`session.isActive` の間だけ表示され、リアルタイムの部分テキストをストリーミング表示します。`ScrollView` 内やシート内のように親ビューの bounds を超えられない場所の利用に適しており、確認・キャンセルボタンでテキストを反映または破棄できます。
+`InlineTranscriptView` はレイアウトフロー内に直接配置するプレビュー。`session.isActive` の間だけ表示され、リアルタイムの部分テキストをストリーミング表示する。`ScrollView` 内やシート内のように親ビューの bounds を超えられない場所の利用に適しており、確認・キャンセルボタンでテキストを反映または破棄できる。
 
-`.voiceInputOverlay(session:onTranscript:)` は任意の View に適用できる modifier です。セッションがアクティブな間だけ対象 View の上部にフローティングプレビューをスプリングアニメーションで表示します。既存の UI 構造を変えずに音声入力を追加する最もシンプルな方法です。
+`.voiceInputOverlay(session:onTranscript:)` は任意の View に適用できる modifier。セッションがアクティブな間だけ対象 View の上部にフローティングプレビューをスプリングアニメーションで表示する。既存の UI 構造を変えずに音声入力を追加する最もシンプルな方法。
 
 ### ボタンとインラインプレビューの組み合わせ
 
@@ -67,3 +67,7 @@ struct MessageView: View {
 ### テキストプレビュー
 
 - ``InlineTranscriptView``
+
+### オーバーレイ Modifier
+
+- ``SwiftUICore/View/voiceInputOverlay(session:onTranscript:)``

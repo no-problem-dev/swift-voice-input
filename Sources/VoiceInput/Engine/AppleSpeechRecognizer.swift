@@ -21,6 +21,8 @@ public actor AppleSpeechRecognizer: SpeechRecognizer {
     private var silenceTimer: Timer?
     private var continuation: AsyncStream<SpeechRecognitionResult>.Continuation?
 
+    /// `AppleSpeechRecognizer` を作成する
+    ///
     /// - Parameter silenceTimeout: 無音で自動停止するまでの秒数（デフォルト: 2秒）
     public init(silenceTimeout: TimeInterval = 2.0) {
         self.silenceTimeout = silenceTimeout

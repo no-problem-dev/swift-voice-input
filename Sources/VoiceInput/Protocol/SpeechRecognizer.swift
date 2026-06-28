@@ -32,6 +32,8 @@ public protocol SpeechRecognizer: Actor {
     ///
     /// `.partial` が発話中にリアルタイムで生成され、セグメント確定時に `.final` が生成される。
     /// `stop()` 呼び出しまたは無音タイムアウトでストリームが終了する。
+    ///
+    /// - Throws: `SpeechRecognitionError.unavailable` — このデバイス・ロケールで音声認識が利用できない場合
     func start(locale: Locale) throws -> AsyncStream<SpeechRecognitionResult>
 
     /// 音声認識を停止する
