@@ -23,7 +23,7 @@ Add the dependency to `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/no-problem-dev/swift-voice-input.git", .upToNextMajor(from: "1.0.0")),
+    .package(url: "https://github.com/no-problem-dev/swift-voice-input.git", .upToNextMajor(from: "2.0.0")),
 ]
 ```
 
