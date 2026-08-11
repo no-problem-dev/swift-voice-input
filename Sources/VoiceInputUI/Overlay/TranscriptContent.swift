@@ -68,7 +68,7 @@ struct TranscriptContent: View {
         if !session.transcript.isEmpty {
             return session.transcript
         }
-        return "聴いています..."
+        return "Listening…"
     }
 
     private var hasText: Bool {

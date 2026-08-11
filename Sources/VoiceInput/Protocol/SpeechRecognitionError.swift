@@ -43,11 +43,11 @@ public enum SpeechRecognitionError: Error, Sendable, Equatable, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .microphoneDenied:
-            "マイクの使用が許可されていません"
+            "Microphone access is turned off."
         case .speechRecognitionDenied:
-            "音声認識が許可されていません"
+            "Speech recognition is turned off."
         case .unavailable:
-            "音声認識がこのデバイスでは利用できません"
+            "Speech recognition isn't available on this device."
         case .engineFailure(let message):
             message
         }

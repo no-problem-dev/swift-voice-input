@@ -2,7 +2,7 @@ English | [日本語](./README.ja.md)
 
 # swift-voice-input
 
-Voice input for iOS and macOS, with the recognition engine behind a protocol so it can be replaced.
+Let people speak instead of type in an iOS or macOS app, with permission refusals, streaming partial text and start/stop state already handled.
 
 [![Swift 6.2](https://img.shields.io/badge/Swift-6.2-orange.svg)](https://swift.org)
 [![Platforms](https://img.shields.io/badge/Platforms-iOS%2017%20|%20macOS%2014-blue.svg)](https://developer.apple.com)

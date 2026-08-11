@@ -68,10 +68,10 @@ public struct VoiceInputButton: View {
             }
         }
         .alert(permissionAlertTitle, isPresented: $showPermissionAlert) {
-            Button("設定を開く") {
+            Button("Open Settings") {
                 openSettings()
             }
-            Button("キャンセル", role: .cancel) {
+            Button("Cancel", role: .cancel) {
                 session.reset()
             }
         } message: {
@@ -104,25 +104,25 @@ public struct VoiceInputButton: View {
     private var permissionAlertTitle: String {
         if case .error(let error) = session.state {
             switch error {
-            case .microphoneDenied: return "マイクの使用が許可されていません"
-            case .speechRecognitionDenied: return "音声認識が許可されていません"
+            case .microphoneDenied: return "Microphone Access Needed"
+            case .speechRecognitionDenied: return "Speech Recognition Needed"
             default: break
             }
         }
-        return "権限が必要です"
+        return "Permission Needed"
     }
 
     private var permissionAlertMessage: String {
         if case .error(let error) = session.state {
             switch error {
             case .microphoneDenied:
-                return "音声入力を使用するには、設定アプリでマイクへのアクセスを許可してください。"
+                return "Allow microphone access in Settings to use voice input."
             case .speechRecognitionDenied:
-                return "音声をテキストに変換するには、設定アプリで音声認識を許可してください。"
+                return "Allow speech recognition in Settings to turn speech into text."
             default: break
             }
         }
-        return "設定アプリで必要な権限を許可してください。"
+        return "Allow the required permissions in Settings."
     }
 
     private func openSettings() {
