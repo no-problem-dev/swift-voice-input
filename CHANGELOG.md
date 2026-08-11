@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-08-11
+
 ### Changed
 
 - Raised the swift-design-system pin to 4.0.0.

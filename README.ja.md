@@ -60,7 +60,7 @@ struct DictationField: View {
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/no-problem-dev/swift-voice-input.git", .upToNextMajor(from: "2.0.0")),
+    .package(url: "https://github.com/no-problem-dev/swift-voice-input.git", from: "3.0.0"),
 ]
 ```
 
