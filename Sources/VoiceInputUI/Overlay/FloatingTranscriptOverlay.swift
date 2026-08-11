@@ -3,12 +3,11 @@ import SwiftUI
 import DesignSystem
 import VoiceInput
 
-/// フローティング音声認識プレビュー
+/// The card that floats above an input field while the user is speaking.
 ///
-/// 入力フィールドの上部に表示され、音声認識のリアルタイムテキストを
-/// ストリーミング表示する。Aqua Voice 風の UX を提供する。
-///
-/// 確認ボタンでテキストを入力欄に反映、キャンセルボタンで破棄する。
+/// Presentation only — it holds no state and decides nothing. Positioning is the
+/// modifier's job, and this raises itself off the background with an elevation
+/// token because it sits over content it does not own.
 struct FloatingTranscriptOverlay: View {
 
     let session: VoiceInputSession

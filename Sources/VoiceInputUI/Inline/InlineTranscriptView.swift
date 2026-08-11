@@ -3,17 +3,21 @@ import SwiftUI
 import DesignSystem
 import VoiceInput
 
-/// インラインの音声認識プレビュー
+/// A transcript preview that takes up space in the layout instead of floating over it.
 ///
-/// レイアウトフロー内に直接配置され、フローティングオーバーレイとは異なり
-/// 親ビューの bounds を超えない。`ScrollView` 内やシート内での使用に適している。
+/// Use this rather than `voiceInputOverlay(session:onTranscript:)` wherever an
+/// overlay would be clipped — inside a `ScrollView`, a sheet, or any container
+/// whose bounds a child cannot escape. The cost is that surrounding content
+/// shifts when it appears, so leave room for it or accept the reflow.
+///
+/// Renders nothing at all while the session is idle.
 ///
 /// ```swift
 /// @State private var session = VoiceInputSession()
 /// @State private var text = ""
 ///
 /// VStack {
-///     TextField("入力...", text: $text)
+///     TextField("Type here…", text: $text)
 ///     InlineTranscriptView(session: session) { transcript in
 ///         text = transcript
 ///     }
@@ -28,9 +32,14 @@ public struct InlineTranscriptView: View {
     @Environment(\.spacingScale) private var spacing
     @Environment(\.radiusScale) private var radius
 
+    /// Creates a preview for one session.
+    ///
     /// - Parameters:
-    ///   - session: 操作対象の音声入力セッション
-    ///   - onTranscript: ユーザーが確認ボタンをタップしたときに確定テキストを渡して呼ばれるクロージャ
+    ///   - session: The session to display. Pass the same instance the
+    ///     microphone button drives.
+    ///   - onTranscript: Called with the final text only when the user accepts
+    ///     it. Cancelling discards the text and does not call this, so treat it
+    ///     as the single point where recognised text enters your model.
     public init(
         session: VoiceInputSession,
         onTranscript: @escaping (String) -> Void

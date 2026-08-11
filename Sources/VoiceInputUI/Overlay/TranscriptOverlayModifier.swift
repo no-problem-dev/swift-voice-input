@@ -3,10 +3,11 @@ import SwiftUI
 import DesignSystem
 import VoiceInput
 
-/// 音声認識のフローティングプレビューを付与する ViewModifier
+/// Positions the floating preview above the view it is applied to.
 ///
-/// 対象 View の上部にオーバーレイとして配置され、
-/// `VoiceInputSession` がアクティブな間だけ表示される。
+/// It measures the host view rather than assuming a height, because the preview
+/// has to clear an input field that grows as the user types. The measurement is
+/// why this is a modifier and not a plain overlay.
 struct TranscriptOverlayModifier: ViewModifier {
 
     let session: VoiceInputSession
@@ -55,16 +56,24 @@ struct TranscriptOverlayModifier: ViewModifier {
 
 extension View {
 
-    /// 音声入力のフローティングプレビューオーバーレイを追加する
+    /// Floats a transcript preview above this view while the session is running.
     ///
-    /// `VoiceInputSession` がアクティブな間、対象 View の上部に
-    /// リアルタイム認識テキストのプレビューを表示する。
+    /// The cheapest way to add voice input to an existing screen: nothing in the
+    /// layout moves, because the preview is drawn over the content rather than
+    /// inside it. That also means it will be clipped inside a `ScrollView` or a
+    /// sheet — reach for ``InlineTranscriptView`` there instead.
+    ///
+    /// - Parameters:
+    ///   - session: The session to follow. The preview appears and disappears
+    ///     with it, so the same instance must be the one the mic button drives.
+    ///   - onTranscript: Called with the final text when the user accepts it.
+    ///     Cancelling discards the text without calling this.
     ///
     /// ```swift
     /// @State private var session = VoiceInputSession()
     /// @State private var text = ""
     ///
-    /// TextField("入力...", text: $text)
+    /// TextField("Type here…", text: $text)
     ///     .voiceInputOverlay(session: session) { transcript in
     ///         text = transcript
     ///     }

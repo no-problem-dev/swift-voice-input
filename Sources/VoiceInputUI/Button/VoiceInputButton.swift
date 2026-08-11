@@ -3,11 +3,16 @@ import SwiftUI
 import DesignSystem
 import VoiceInput
 
-/// 音声入力トグルボタン
+/// A microphone button that starts and stops a session, and handles refused permissions for you.
 ///
-/// タップで音声認識の開始/停止を切り替える。
-/// リスニング中はパルスアニメーションと赤色表示に変化する。
-/// 権限拒否時はアラートで設定画面への誘導を表示する。
+/// The permission path is the reason to use this rather than a plain button: when
+/// the session reports a denial, this raises an alert that takes the user to
+/// Settings, since no amount of tapping will fix it. That means the alert can
+/// appear without the button being tapped again — it follows the session's state.
+///
+/// While listening, the icon turns red and pulses. Nothing else is configurable;
+/// build your own button against `VoiceInputSession` if you need a different
+/// treatment.
 ///
 /// ```swift
 /// @State private var session = VoiceInputSession()
@@ -24,7 +29,10 @@ public struct VoiceInputButton: View {
     @Environment(\.colorPalette) private var colors
     @Environment(\.motion) private var motion
 
-    /// - Parameter session: 操作対象の音声入力セッション
+    /// Creates a button driving one session.
+    ///
+    /// - Parameter session: The session to start and stop. The button reads its
+    ///   state as well, so pass the same instance the transcript preview uses.
     public init(session: VoiceInputSession) {
         self.session = session
     }

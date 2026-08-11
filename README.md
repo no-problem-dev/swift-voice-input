@@ -2,57 +2,39 @@ English | [日本語](./README.ja.md)
 
 # swift-voice-input
 
-A Swift package for voice input on iOS / macOS. Protocol-oriented design allows you to swap in multiple speech recognition backends including Apple Speech.
+Voice input for iOS and macOS, with the recognition engine behind a protocol so it can be replaced.
 
 [![Swift 6.2](https://img.shields.io/badge/Swift-6.2-orange.svg)](https://swift.org)
 [![Platforms](https://img.shields.io/badge/Platforms-iOS%2017%20|%20macOS%2014-blue.svg)](https://developer.apple.com)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## Features
+## Overview
 
-- **Protocol-oriented** — Abstracts the recognition engine behind the `SpeechRecognizer` protocol. Plug in Apple Speech, Whisper, local LLMs, and more
-- **Real-time streaming** — Partial results delivered incrementally via `AsyncStream`. Use `partialText` for live display
-- **Floating preview** — An Aqua Voice-style overlay shows recognized text in real time above the input field
-- **DesignSystem compliant** — UI components fully follow the token system of [swift-design-system](https://github.com/no-problem-dev/swift-design-system)
-- **Two-target layout** — `VoiceInput` (Core) and `VoiceInputUI` (SwiftUI) are separated. Depend on Core alone when you don't need UI
-- **Swift Concurrency** — Actor-based audio engine and `@Observable` state management for safe concurrent access
+- **The engine is a seam, not a commitment** — Apple's recogniser is the default, not the design. Anything conforming to `SpeechRecognizer` drops in, which is also what makes the state machine testable without a microphone.
+- **Text as it is spoken** — partial results stream in and are published as a plain observable string, so a view binds to a property instead of managing a stream.
+- **Refused permissions handled** — the one path most voice features get wrong. A denial is not retryable in-app, and the supplied button says so and routes the user to Settings.
+- **UI is optional** — `VoiceInput` carries the recogniser and session; `VoiceInputUI` carries the SwiftUI controls. Depend on the first alone and SwiftUI never enters the build.
 
-## Installation
+## Usage
 
-Add the dependency to `Package.swift`:
+The host app must declare both usage descriptions in its `Info.plist`:
 
-```swift
-dependencies: [
-    .package(url: "https://github.com/no-problem-dev/swift-voice-input.git", .upToNextMajor(from: "2.0.0")),
-]
-```
+- `NSMicrophoneUsageDescription` — why the app records audio
+- `NSSpeechRecognitionUsageDescription` — why that audio is transcribed
 
-Add to your target:
-
-```swift
-// Core only (no UI needed)
-.product(name: "VoiceInput", package: "swift-voice-input"),
-
-// Core + SwiftUI components
-.product(name: "VoiceInputUI", package: "swift-voice-input"),
-```
-
-## Quick Start
-
-### Basic Usage
+Missing either one terminates the app the moment that permission is requested, so
+the symptom is a crash on first tap rather than a denied permission.
 
 ```swift
 import VoiceInput
 import VoiceInputUI
 
-struct MyView: View {
+struct DictationField: View {
     @State private var session = VoiceInputSession()
     @State private var text = ""
 
     var body: some View {
-        VStack {
-            TextField("Type here...", text: $text)
-
+        HStack {
+            TextField("Type here…", text: $text)
             VoiceInputButton(session: session)
         }
         .voiceInputOverlay(session: session) { transcript in
@@ -62,115 +44,38 @@ struct MyView: View {
 }
 ```
 
-### Inline Transcript Preview
+## Documentation
 
-Embed a transcript preview directly in the layout flow using `InlineTranscriptView`:
-
-```swift
-import VoiceInput
-import VoiceInputUI
-
-struct MyView: View {
-    @State private var session = VoiceInputSession()
-    @State private var text = ""
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                TextField("Type here...", text: $text)
-                VoiceInputButton(session: session)
-            }
-            InlineTranscriptView(session: session) { transcript in
-                text = transcript
-            }
-        }
-    }
-}
-```
-
-### Custom Recognition Engine
-
-Implement an Actor conforming to `SpeechRecognizer`:
-
-```swift
-actor WhisperRecognizer: SpeechRecognizer {
-    let displayName = "Whisper"
-    var isAvailable: Bool { true }
-
-    func requestPermissions() async -> Result<Void, SpeechRecognitionError> {
-        // Request microphone permission
-        .success(())
-    }
-
-    func start(locale: Locale) throws -> AsyncStream<SpeechRecognitionResult> {
-        // Start recognition with Whisper model
-        AsyncStream { _ in }
-    }
-
-    func stop() {
-        // Stop recognition
-    }
-}
-
-// Inject at session creation
-@State private var session = VoiceInputSession(
-    recognizer: WhisperRecognizer()
-)
-```
-
-### Session API
-
-```swift
-let session = VoiceInputSession()
-
-session.toggle()           // Toggle start/stop
-session.startListening()   // Start
-session.stopListening()    // Stop
-
-session.state              // .idle, .requesting, .listening, .processing, .error
-session.partialText        // Real-time partial text
-session.transcript         // Finalized text
-
-let text = session.confirm() // Confirm text + reset
-session.reset()              // Reset
-```
-
-## Architecture
-
-```
-VoiceInput (Core)
-├── Protocol/
-│   ├── SpeechRecognizer         # Recognition engine abstraction protocol (Actor)
-│   ├── SpeechRecognitionResult  # .partial / .final result type
-│   └── SpeechRecognitionError   # Error type
-├── Engine/
-│   ├── AppleSpeechRecognizer    # Default Apple Speech implementation
-│   └── PermissionRequester      # Microphone & speech recognition permissions
-└── Session/
-    └── VoiceInputSession        # @Observable state management
-
-VoiceInputUI (SwiftUI + DesignSystem)
-├── Button/
-│   └── VoiceInputButton         # Microphone toggle button
-├── Inline/
-│   └── InlineTranscriptView     # Inline transcript preview
-└── Overlay/
-    └── TranscriptOverlayModifier # .voiceInputOverlay() modifier
-```
+[**API reference and guides**](https://no-problem-dev.github.io/swift-voice-input/documentation/voiceinput/) —
+including [Getting Started](https://no-problem-dev.github.io/swift-voice-input/documentation/voiceinput/gettingstarted/),
+substituting a recognition engine, and what separates a partial result from a final one.
 
 ## Requirements
 
-| Requirement | Version |
-|-------------|---------|
-| iOS | 17.0+ |
-| macOS | 14.0+ |
-| Swift | 6.2+ |
-| Xcode | 26.0+ |
+| iOS | macOS | Swift |
+|-----|-------|-------|
+| 17.0+ | 14.0+ | 6.2+ |
+
+## Installation
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/no-problem-dev/swift-voice-input.git", .upToNextMajor(from: "2.0.0")),
+]
+```
+
+Then take one or both products — `VoiceInput` for the session and recogniser,
+`VoiceInputUI` for the SwiftUI controls:
+
+```swift
+.product(name: "VoiceInput", package: "swift-voice-input"),
+.product(name: "VoiceInputUI", package: "swift-voice-input"),
+```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
-
-## Links
-
-- [Issues](https://github.com/no-problem-dev/swift-voice-input/issues)
+MIT — see [LICENSE](LICENSE).

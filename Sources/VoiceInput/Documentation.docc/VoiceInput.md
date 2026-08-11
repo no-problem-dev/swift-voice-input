@@ -1,29 +1,48 @@
 # ``VoiceInput``
 
-プロトコル指向の音声入力 Core ライブラリ。Apple Speech をはじめとする複数のバックエンドを同一インターフェースで差し込み可能にする。
+Voice input for iOS and macOS, with the recognition engine behind a protocol so it can be replaced.
 
 ## Overview
 
-`VoiceInput` は iOS / macOS 向けの音声入力 Swift パッケージ。`SpeechRecognizer` プロトコルで認識エンジンを抽象化し、`AsyncStream` でリアルタイムの部分テキストをストリーミング配信する。
+`VoiceInput` turns a speech recogniser into two things a view can bind to: a
+string that updates as the user speaks, and a state that says what the microphone
+is doing. The engine behind them is a protocol, so Apple's recogniser is a
+default rather than a commitment.
 
-`VoiceInputSession` は `@Observable` な状態管理クラスで、認識の開始・停止・テキスト確定をシンプルな API で提供する。
+The core is deliberately small. ``VoiceInputSession`` owns the state machine and
+the text; ``SpeechRecognizer`` is the seam an alternative engine plugs into.
+SwiftUI components live in the separate `VoiceInputUI` library, so an app that
+draws its own controls — or has no UI at all — does not pull SwiftUI in.
+
+Start with <doc:GettingStarted>, which covers the `Info.plist` keys the first
+line of code depends on.
+
+### What the session gives a view
 
 ```swift
 import VoiceInput
 
 @State private var session = VoiceInputSession()
 
-// 開始/停止のトグル
-session.toggle()
+session.toggle()          // start, or stop if already listening
 
-// リアルタイムの部分テキスト
-Text(session.partialText)
+Text(session.partialText) // rewritten on every update while the user speaks
 
-// テキストを確定して取得（セッションはリセットされる）
 let text = session.confirm()
 ```
 
-`SpeechRecognizer` プロトコルに準拠した Actor を実装すれば、Whisper やローカル LLM など任意のバックエンドを差し込める。
+Two properties are easy to confuse. `partialText` is provisional — the recogniser
+rewrites earlier words as it hears more, so display it but do not act on it.
+`transcript` is only set when the recogniser settles, which often never happens
+because the user stopped first. ``VoiceInputSession/confirm()`` picks whichever
+is populated, which is why it is the method to reach for rather than reading
+either directly.
+
+### Substituting an engine
+
+Conform an actor to ``SpeechRecognizer`` and pass it in. The requirement is
+`Actor` rather than a plain protocol because an engine owns audio hardware, and
+that isolation is what stops a double-tapped button from opening two sessions.
 
 ```swift
 actor WhisperRecognizer: SpeechRecognizer {
@@ -31,37 +50,36 @@ actor WhisperRecognizer: SpeechRecognizer {
     var isAvailable: Bool { true }
 
     func requestPermissions() async -> Result<Void, SpeechRecognitionError> {
-        // マイク権限のリクエスト
         .success(())
     }
 
     func start(locale: Locale) throws -> AsyncStream<SpeechRecognitionResult> {
-        // Whisper モデルによる認識開始
         AsyncStream { _ in }
     }
 
     func stop() {}
 }
+
+let session = VoiceInputSession(recognizer: WhisperRecognizer())
 ```
 
-SwiftUI コンポーネントが必要な場合は `VoiceInputUI` モジュールを追加する。`VoiceInputUI` は `VoiceInputSession` を受け取るマイクトグルボタン（`VoiceInputButton`）、フロー内に配置するインラインプレビュー（`InlineTranscriptView`）、任意の View に後付けできるフローティングオーバーレイ modifier（`.voiceInputOverlay(session:onTranscript:)`）を提供する。`VoiceInput` はバックエンドと状態管理のみを担い、UI の詳細は `VoiceInputUI` に委ねる設計。
+The same seam is what makes the state machine testable: a mock recogniser replays
+a scripted list of results in milliseconds, with no microphone and no permission
+prompts.
 
 ## Topics
 
-### はじめに
+### Essentials
 
 - <doc:GettingStarted>
-
-### セッション管理
-
 - ``VoiceInputSession``
 
-### 認識プロトコル
+### Recognition results
 
-- ``SpeechRecognizer``
 - ``SpeechRecognitionResult``
 - ``SpeechRecognitionError``
 
-### 組み込みエンジン
+### Substituting an engine
 
+- ``SpeechRecognizer``
 - ``AppleSpeechRecognizer``

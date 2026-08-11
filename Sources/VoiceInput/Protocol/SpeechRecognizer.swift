@@ -1,41 +1,62 @@
 import Foundation
 
-/// 音声認識エンジンの抽象化プロトコル
+/// A swappable speech recognition backend behind one streaming interface.
 ///
-/// Apple Speech、Whisper、ローカル LLM など異なるバックエンドを
-/// 同一インターフェースで差し込み可能にする。
+/// The requirement is deliberately `Actor`: a backend owns the microphone and
+/// mutable engine state, and actor isolation is what stops a double-tapped
+/// button from leaving two capture sessions running at once.
 ///
-/// Actor 準拠により、オーディオエンジンの内部状態へのアクセスが
-/// スレッドセーフに保たれる。
+/// Drive it in order — permissions, start, consume the stream, stop. Conformers
+/// are not obliged to re-check permissions inside ``start(locale:)``, so skipping
+/// the request tends to surface as a stream that finishes having produced nothing
+/// rather than as an error.
 ///
 /// ```swift
 /// let recognizer = AppleSpeechRecognizer()
-/// let stream = try await recognizer.start(locale: Locale(identifier: "ja-JP"))
-/// for await result in stream {
-///     switch result {
-///     case .partial(let text): print("途中: \(text)")
-///     case .final(let text): print("確定: \(text)")
-///     }
+/// guard case .success = await recognizer.requestPermissions() else { return }
+///
+/// for await result in try await recognizer.start(locale: Locale(identifier: "en-US")) {
+///     print(result.isFinal ? "settled: \(result.text)" : "so far: \(result.text)")
 /// }
 /// ```
 public protocol SpeechRecognizer: Actor {
-    /// 表示用の名前（例: "Apple Speech", "Whisper"）
+    /// A name for this backend fit to show a user choosing between engines.
     var displayName: String { get }
 
-    /// このデバイスで利用可能かどうか
+    /// Whether this backend can recognise speech on this device right now.
+    ///
+    /// The answer changes at runtime — a server-backed engine loses the network,
+    /// a language pack finishes downloading — so read it just before starting
+    /// rather than caching it at launch.
     var isAvailable: Bool { get }
 
-    /// 必要な権限をリクエストする
+    /// Asks the user for every permission this backend needs, prompting only the first time.
+    ///
+    /// A denial is final as far as the app is concerned: the system will not ask
+    /// again, and only the user can reverse it in Settings. Treat a failure as a
+    /// reason to send them there, not as something to retry.
+    ///
+    /// - Returns: `.success` only when every required permission is granted;
+    ///   otherwise the specific denial, so the caller can name the right setting.
     func requestPermissions() async -> Result<Void, SpeechRecognitionError>
 
-    /// 音声認識を開始し、結果のストリームを返す
+    /// Begins recognising and hands back the stream of transcriptions it produces.
     ///
-    /// `.partial` が発話中にリアルタイムで生成され、セグメント確定時に `.final` が生成される。
-    /// `stop()` 呼び出しまたは無音タイムアウトでストリームが終了する。
+    /// See ``SpeechRecognitionResult`` for how partial and final updates differ.
+    /// The stream finishes on ``stop()``, on a final result, or when the backend
+    /// gives up — silence, an interrupted audio session, an engine failure. A
+    /// finished stream is therefore not by itself evidence that anything was heard.
     ///
-    /// - Throws: `SpeechRecognitionError.unavailable` — このデバイス・ロケールで音声認識が利用できない場合
+    /// - Parameter locale: The language to recognise. A backend that cannot serve
+    ///   it throws rather than quietly recognising in some other language.
+    /// - Throws: ``SpeechRecognitionError/unavailable`` when this device or this
+    ///   locale cannot be served.
     func start(locale: Locale) throws -> AsyncStream<SpeechRecognitionResult>
 
-    /// 音声認識を停止する
+    /// Ends recognition and releases the microphone.
+    ///
+    /// Safe to call when nothing is running. Any stream handed out by
+    /// ``start(locale:)`` finishes as a result, so a `for await` loop over it
+    /// ends rather than hanging.
     func stop()
 }

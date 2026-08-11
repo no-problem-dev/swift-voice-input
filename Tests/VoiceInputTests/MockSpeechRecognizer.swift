@@ -2,10 +2,12 @@
 import Foundation
 import VoiceInput
 
-/// テスト用のモック音声認識エンジン
+/// A recogniser that replays a scripted list of results instead of listening.
 ///
-/// プロトコル準拠を検証し、`VoiceInputSession` の状態遷移テストに使用する。
-/// `results` に設定したイベントを順次ストリーム配信する。
+/// Lets the session's state machine be tested without a microphone, without
+/// permission prompts, and without the timing of real speech: the whole script
+/// plays out in tens of milliseconds. Also records call counts so a test can
+/// assert that stopping actually reached the backend.
 actor MockSpeechRecognizer: SpeechRecognizer {
 
     let displayName = "Mock"
@@ -49,7 +51,8 @@ actor MockSpeechRecognizer: SpeechRecognizer {
             Task {
                 for result in capturedResults {
                     continuation.yield(result)
-                    // 少し間を空ける
+                    // Yield between results so the session observes them as
+                    // separate updates rather than one collapsed final state.
                     try? await Task.sleep(for: .milliseconds(10))
                 }
                 continuation.finish()

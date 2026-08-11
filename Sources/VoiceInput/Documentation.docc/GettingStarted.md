@@ -1,18 +1,11 @@
-# VoiceInput をはじめる
+# Getting started
 
-音声入力機能をアプリに組み込む手順を説明する。
+Add the package, declare two `Info.plist` keys, and put a live transcript on screen.
 
-## インストール
+## Add the package
 
-`Package.swift` の `dependencies` に追加する。
-
-```swift
-dependencies: [
-    .package(url: "https://github.com/no-problem-dev/swift-voice-input.git", .upToNextMajor(from: "1.0.0")),
-]
-```
-
-次に、ターゲットの `dependencies` に `VoiceInput` を追加する。
+Add the repository to your `Package.swift` dependencies, then add the product to
+the target that needs it.
 
 ```swift
 .target(
@@ -23,84 +16,108 @@ dependencies: [
 )
 ```
 
-SwiftUI コンポーネントも使用する場合は `VoiceInputUI` も追加する。
+Add `VoiceInputUI` as well if you want the ready-made SwiftUI controls; skip it
+if you are drawing your own.
+
+## Declare the usage descriptions
+
+The host app must declare both keys in its `Info.plist`:
+
+- `NSMicrophoneUsageDescription` — why the app records audio
+- `NSSpeechRecognitionUsageDescription` — why that audio is transcribed
+
+This is not paperwork that can be deferred. iOS terminates the app at the moment
+the matching permission is requested if the key is absent, so the symptom of
+forgetting one is a crash the first time a user taps the microphone — not a
+denied permission, and not an error you can catch.
+
+## Ask before you listen
+
+``VoiceInputSession/startListening()`` requests both permissions and then starts.
+The system prompts once per permission per install; after that the standing
+answer comes back with no UI, so there is nothing to cache.
+
+A refusal is not a transient failure. The system will not ask again, so retrying
+in-app cannot help — read ``VoiceInputSession/isPermissionDenied`` and send the
+user to Settings instead.
 
 ```swift
-.product(name: "VoiceInputUI", package: "swift-voice-input"),
+if session.isPermissionDenied {
+    // Only Settings can undo this.
+    openURL(URL(string: UIApplication.openSettingsURLString)!)
+}
 ```
 
-## Info.plist の権限設定
+## Show the text as it arrives
 
-音声入力にはマイクと音声認識の権限が必要。`Info.plist` に以下のキーを追加する。
-
-- `NSMicrophoneUsageDescription` — マイクを使用する理由の説明文
-- `NSSpeechRecognitionUsageDescription` — 音声認識を使用する理由の説明文
-
-## 基本的な使い方
-
-### 音声入力の開始と停止
-
-``VoiceInputSession`` を `@State` で保持し、`toggle()` で開始・停止を切り替える。
+Hold the session in `@State` and bind to it. `toggle()` is the whole behaviour of
+a microphone button — it starts, or stops if already running.
 
 ```swift
-import VoiceInput
+struct DictationField: View {
+    @State private var session = VoiceInputSession()
+    @State private var text = ""
 
-@Observable
-class MyViewModel {
-    var session = VoiceInputSession()
-    var recognizedText = ""
-
-    func toggleVoiceInput() {
-        session.toggle()
+    var body: some View {
+        VStack {
+            TextField("Type here…", text: $text)
+            Text(session.partialText)
+            Button("Speak") { session.toggle() }
+        }
     }
 }
 ```
 
-### リアルタイムテキストの取得
+``VoiceInputSession/partialText`` is replaced wholesale on every update, not
+appended to: the recogniser revises words it has already reported as it hears
+more of the utterance. Render it, but do not treat it as committed input.
 
-`session.partialText` を観察すると、発話中に逐次更新されるテキストを取得できる。確定テキストは `session.transcript` で参照できる。
+## Take the result
 
-```swift
-// リアルタイムの部分テキスト（発話中に随時更新）
-Text(session.partialText)
-
-// 確定済みテキスト
-Text(session.transcript)
-```
-
-### 認識結果の確定
-
-`confirm()` を呼ぶと現在のテキストを返し、セッションをリセットする。
+``VoiceInputSession/confirm()`` returns the recognised text and clears the
+session in one step.
 
 ```swift
 let text = session.confirm()
-// text には partialText または transcript が返る
-// セッションは .idle 状態にリセットされる
 ```
 
-### 状態の監視
+Prefer it over reading the properties yourself. ``VoiceInputSession/transcript``
+is only set when the recogniser settles on a final result, and a session that
+ends because the user stopped or fell silent — the common case — never gets
+there. `confirm()` already falls back to the partial text, which by then is the
+more complete of the two.
 
-`session.state` で現在の認識状態を把握できる。
+## Know why it stopped
+
+``VoiceInputSession/state`` distinguishes waiting on permission from listening
+from stopping, which is what a button needs to render itself honestly.
 
 ```swift
 switch session.state {
-case .idle:
-    // 待機中
-case .requesting:
-    // 権限リクエスト中
-case .listening:
-    // 音声認識中
-case .processing:
-    // 処理中（停止後の短い遷移期間）
+case .idle:       EmptyView()
+case .requesting: ProgressView()          // the system prompt may be up
+case .listening:  RecordingIndicator()
+case .processing: ProgressView()          // last words still landing
 case .error(let error):
-    // エラー発生
-    print(error.localizedDescription)
+    Text(error.localizedDescription)
 }
 ```
 
-### カスタム認識エンジンの差し込み
+A session that stops has not necessarily failed. Silence, an explicit stop, a
+phone call taking the audio session — all of them simply end the stream and
+return the session to `.idle`, keeping whatever text had been recognised.
 
-``SpeechRecognizer`` プロトコルに準拠した Actor を ``VoiceInputSession/init(recognizer:locale:)`` に渡す。
+## Clean up
+
+Nothing tears a session down on its own. One left in `.listening` holds the
+microphone, so a view that can disappear mid-utterance should call
+``VoiceInputSession/reset()`` on its way out.
+
+## Substitute an engine
+
+Pass any actor conforming to ``SpeechRecognizer`` — a different backend, or a
+mock that replays scripted results so the state machine can be tested without a
+microphone.
 
 ```swift
 let session = VoiceInputSession(
@@ -108,3 +125,6 @@ let session = VoiceInputSession(
     locale: Locale(identifier: "en-US")
 )
 ```
+
+Both are fixed for the session's lifetime; to recognise another language, make
+another session.

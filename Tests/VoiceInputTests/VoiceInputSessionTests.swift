@@ -25,7 +25,7 @@ struct VoiceInputSessionTests {
 
         session.startListening()
 
-        // 状態遷移を待つ
+        // The failure lands in state asynchronously, not on the calling turn.
         try await Task.sleep(for: .milliseconds(100))
 
         #expect(session.state == .error(.microphoneDenied))
@@ -46,7 +46,7 @@ struct VoiceInputSessionTests {
 
         session.startListening()
 
-        // ストリームが完了するまで待つ
+        // Long enough for all three scripted results plus the 10ms gaps.
         try await Task.sleep(for: .milliseconds(200))
 
         #expect(session.transcript == "こんにちは世界")
@@ -98,13 +98,12 @@ struct VoiceInputSessionTests {
         )
         let session = VoiceInputSession(recognizer: mock)
 
-        // 開始
         session.toggle()
         try await Task.sleep(for: .milliseconds(50))
 
-        // listening 状態になっているはず（ストリーム完了前なら）
-        // ストリームが短いのでタイミングにより idle の場合もある
-        // toggle で停止
+        // The scripted stream is short enough that it may already have
+        // finished and returned the session to idle, so stopping is only
+        // meaningful — and only asserted — while it is still listening.
         if session.state == .listening {
             session.toggle()
             try await Task.sleep(for: .milliseconds(400))

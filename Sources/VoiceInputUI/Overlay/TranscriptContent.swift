@@ -3,9 +3,11 @@ import SwiftUI
 import DesignSystem
 import VoiceInput
 
-/// 音声認識テキスト表示の共通コンテンツ（内部用）
+/// The transcript text plus its accept and cancel controls, shared by both presentations.
 ///
-/// `FloatingTranscriptOverlay` と `InlineTranscriptView` で共有される。
+/// Owns the one decision in the preview: accepting calls `confirm()`, which both
+/// reads the text and resets the session, so the callback fires exactly once and
+/// only when there is something to hand over.
 struct TranscriptContent: View {
 
     let session: VoiceInputSession
@@ -17,7 +19,6 @@ struct TranscriptContent: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: spacing.sm) {
-            // リアルタイム認識テキスト
             Text(displayText)
                 .typography(.bodyLarge)
                 .foregroundStyle(hasText ? colors.onSurface : colors.onSurfaceVariant)
@@ -28,13 +29,11 @@ struct TranscriptContent: View {
                 .contentTransition(.numericText())
                 .animation(.easeOut(duration: 0.15), value: session.partialText)
 
-            // 下部: ウェーブフォーム + アクションボタン
             HStack(spacing: spacing.sm) {
                 WaveformIndicator(isListening: session.state == .listening)
 
                 Spacer()
 
-                // キャンセル
                 Button {
                     onCancel()
                 } label: {
@@ -44,7 +43,6 @@ struct TranscriptContent: View {
                 }
                 .buttonStyle(.plain)
 
-                // 確認
                 Button {
                     let text = session.confirm()
                     if !text.isEmpty {

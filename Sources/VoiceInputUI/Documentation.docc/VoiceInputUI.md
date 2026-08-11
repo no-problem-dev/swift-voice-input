@@ -1,73 +1,79 @@
 # ``VoiceInputUI``
 
-`VoiceInputSession` に接続してすぐ使える SwiftUI コンポーネントと View modifier を提供する UI ライブラリ。
+SwiftUI controls that bind to a voice input session, so an existing text field gains a microphone.
 
 ## Overview
 
-`VoiceInputUI` は `VoiceInput` モジュールの `VoiceInputSession` をフロントエンドで扱うための SwiftUI コンポーネント集。マイクトグルボタン・インラインテキストプレビュー・フローティングオーバーレイの 3 つのプリミティブで構成されており、既存のフォームや入力欄に最小限の変更で音声入力機能を追加できる。
+Three pieces, each solving a problem that is tedious to redo by hand: a
+microphone button that handles refused permissions, and two ways to show the
+transcript as it arrives.
 
-`VoiceInputButton` はマイクアイコンのトグルボタン。タップするたびに `VoiceInputSession.toggle()` を呼び出し、リスニング中はパルスアニメーションと赤色アイコンに変化する。権限拒否時は自動的に設定アプリへ誘導するアラートを表示するため、権限エラー処理を自前で実装する必要がない。
+`VoiceInput` has no dependency on this library. Depend on the core alone if you
+draw your own controls.
 
-`InlineTranscriptView` はレイアウトフロー内に直接配置するプレビュー。`session.isActive` の間だけ表示され、リアルタイムの部分テキストをストリーミング表示する。`ScrollView` 内やシート内のように親ビューの bounds を超えられない場所の利用に適しており、確認・キャンセルボタンでテキストを反映または破棄できる。
+### The button
 
-`.voiceInputOverlay(session:onTranscript:)` は任意の View に適用できる modifier。セッションがアクティブな間だけ対象 View の上部にフローティングプレビューをスプリングアニメーションで表示する。既存の UI 構造を変えずに音声入力を追加する最もシンプルな方法。
+``VoiceInputButton`` starts and stops the session, turns red and pulses while
+listening, and — the part worth not rewriting — raises an alert routing the user
+to Settings when a permission is refused. Because it follows the session's state
+rather than its own taps, that alert can appear without the button being touched
+again.
 
-### ボタンとインラインプレビューの組み合わせ
+### Choosing a preview
+
+Both previews show the same content and differ only in how they take up space.
+
+``InlineTranscriptView`` sits in the layout, so surrounding content moves when it
+appears. Use it inside a `ScrollView`, a sheet, or anywhere else a child cannot
+draw outside its parent's bounds.
+
+`voiceInputOverlay(session:onTranscript:)` floats above the view instead, so
+nothing in the layout shifts. Cheaper to adopt, but it will be clipped in exactly
+the containers the inline view exists for.
+
+Either way, the transcript reaches your model through the callback and only when
+the user accepts it. Cancelling discards the text silently, so that callback is
+the single point where recognised text enters the app.
 
 ```swift
-import VoiceInput
-import VoiceInputUI
-
 struct VoiceTextField: View {
     @State private var session = VoiceInputSession()
     @State private var text = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                TextField("音声またはキーボードで入力", text: $text)
-                VoiceInputButton(session: session)
-            }
-            InlineTranscriptView(session: session) { transcript in
-                text = transcript
-            }
+        HStack {
+            TextField("Type here…", text: $text)
+            VoiceInputButton(session: session)
+        }
+        .voiceInputOverlay(session: session) { transcript in
+            text = transcript
         }
     }
 }
 ```
 
-### フローティングオーバーレイ
+Swap the modifier for ``InlineTranscriptView`` inside the container where an
+overlay would be clipped:
 
 ```swift
-import VoiceInput
-import VoiceInputUI
-
-struct MessageView: View {
-    @State private var session = VoiceInputSession()
-    @State private var message = ""
-
-    var body: some View {
-        HStack {
-            TextField("メッセージ", text: $message)
-            VoiceInputButton(session: session)
-        }
-        .voiceInputOverlay(session: session) { transcript in
-            message = transcript
-        }
+VStack(alignment: .leading) {
+    HStack {
+        TextField("Type here…", text: $text)
+        VoiceInputButton(session: session)
+    }
+    InlineTranscriptView(session: session) { transcript in
+        text = transcript
     }
 }
 ```
 
 ## Topics
 
-### ボタン
+### Starting and stopping
 
 - ``VoiceInputButton``
 
-### テキストプレビュー
+### Showing the transcript
 
 - ``InlineTranscriptView``
-
-### オーバーレイ Modifier
-
 - ``SwiftUICore/View/voiceInputOverlay(session:onTranscript:)``

@@ -2,9 +2,11 @@
 import SwiftUI
 import DesignSystem
 
-/// 録音中のパルスアニメーションインジケーター
+/// Three pulsing bars that tell the user the microphone is still live.
 ///
-/// 3本のバーがランダムな高さでアニメーションし、音声入力中であることを視覚的に示す。
+/// The motion is decorative, not a level meter — the bar heights are fixed and
+/// do not follow the audio. It exists so a silent pause does not read as a
+/// crash; do not present it as feedback about whether the user is being heard.
 struct WaveformIndicator: View {
 
     let isListening: Bool

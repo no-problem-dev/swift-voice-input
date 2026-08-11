@@ -2,57 +2,39 @@
 
 # swift-voice-input
 
-iOS / macOS 向けの音声入力 Swift パッケージ。プロトコル指向の設計により、Apple Speech をはじめとする複数の音声認識バックエンドを差し込み可能にする。
+iOS / macOS 向けの音声入力。認識エンジンをプロトコルの裏に置き、差し替え可能にする。
 
 [![Swift 6.2](https://img.shields.io/badge/Swift-6.2-orange.svg)](https://swift.org)
 [![Platforms](https://img.shields.io/badge/Platforms-iOS%2017%20|%20macOS%2014-blue.svg)](https://developer.apple.com)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## 特徴
+## 概要
 
-- **プロトコル指向** — `SpeechRecognizer` プロトコルで認識エンジンを抽象化。Apple Speech、Whisper、ローカル LLM 等を差し込み可能
-- **リアルタイムストリーミング** — `AsyncStream` で部分結果を逐次配信。`partialText` でリアルタイム表示
-- **フローティングプレビュー** — Aqua Voice 風のオーバーレイで、入力フィールド上部に認識テキストをリアルタイム表示
-- **DesignSystem 準拠** — [swift-design-system](https://github.com/no-problem-dev/swift-design-system) のトークン体系に完全準拠した UI コンポーネント
-- **2ターゲット構成** — `VoiceInput`（Core）と `VoiceInputUI`（SwiftUI）を分離。UI 不要な場合は Core のみ依存可能
-- **Swift Concurrency** — Actor ベースの音声エンジン、`@Observable` の状態管理で安全な並行処理
+- **エンジンは継ぎ目であって前提ではない** — Apple の認識器は既定であって設計ではない。`SpeechRecognizer` に準拠すれば差し込める。マイク無しで状態機械をテストできるのも同じ継ぎ目のおかげ
+- **話した先からテキストが出る** — 部分結果が逐次流れ、ただの observable な文字列として公開される。View はストリームではなくプロパティに束ねればよい
+- **権限拒否を取りこぼさない** — 音声機能が最も間違えやすい経路。拒否はアプリ内で再試行できない。付属のボタンはそれを伝え、設定アプリへ誘導する
+- **UI は任意** — `VoiceInput` が認識器とセッション、`VoiceInputUI` が SwiftUI コンポーネント。前者だけに依存すれば SwiftUI はビルドに入らない
 
-## インストール
+## 使い方
 
-`Package.swift` に依存を追加:
+アプリ側の `Info.plist` に 2 つの用途説明が必須。
 
-```swift
-dependencies: [
-    .package(url: "https://github.com/no-problem-dev/swift-voice-input.git", .upToNextMajor(from: "2.0.0")),
-]
-```
+- `NSMicrophoneUsageDescription` — 音声を録音する理由
+- `NSSpeechRecognitionUsageDescription` — その音声を文字起こしする理由
 
-ターゲットに追加:
-
-```swift
-// Core のみ（UI 不要な場合）
-.product(name: "VoiceInput", package: "swift-voice-input"),
-
-// Core + SwiftUI コンポーネント
-.product(name: "VoiceInputUI", package: "swift-voice-input"),
-```
-
-## クイックスタート
-
-### 基本的な使い方
+どちらかが欠けていると、その権限を要求した瞬間に OS がアプリを終了させる。
+症状は「権限が拒否された」ではなく「最初のタップで落ちる」になる。
 
 ```swift
 import VoiceInput
 import VoiceInputUI
 
-struct MyView: View {
+struct DictationField: View {
     @State private var session = VoiceInputSession()
     @State private var text = ""
 
     var body: some View {
-        VStack {
-            TextField("入力...", text: $text)
-
+        HStack {
+            TextField("Type here…", text: $text)
             VoiceInputButton(session: session)
         }
         .voiceInputOverlay(session: session) { transcript in
@@ -62,115 +44,38 @@ struct MyView: View {
 }
 ```
 
-### インラインプレビュー
+## ドキュメント
 
-`InlineTranscriptView` でレイアウトフロー内に認識テキストプレビューを埋め込む:
-
-```swift
-import VoiceInput
-import VoiceInputUI
-
-struct MyView: View {
-    @State private var session = VoiceInputSession()
-    @State private var text = ""
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                TextField("入力...", text: $text)
-                VoiceInputButton(session: session)
-            }
-            InlineTranscriptView(session: session) { transcript in
-                text = transcript
-            }
-        }
-    }
-}
-```
-
-### カスタム認識エンジンの差し込み
-
-`SpeechRecognizer` プロトコルに準拠した Actor を実装:
-
-```swift
-actor WhisperRecognizer: SpeechRecognizer {
-    let displayName = "Whisper"
-    var isAvailable: Bool { true }
-
-    func requestPermissions() async -> Result<Void, SpeechRecognitionError> {
-        // マイク権限のリクエスト
-        .success(())
-    }
-
-    func start(locale: Locale) throws -> AsyncStream<SpeechRecognitionResult> {
-        // Whisper モデルによる認識開始
-        AsyncStream { _ in }
-    }
-
-    func stop() {
-        // 認識停止
-    }
-}
-
-// 使用時に差し込み
-@State private var session = VoiceInputSession(
-    recognizer: WhisperRecognizer()
-)
-```
-
-### セッション API
-
-```swift
-let session = VoiceInputSession()
-
-session.toggle()           // 開始/停止のトグル
-session.startListening()   // 開始
-session.stopListening()    // 停止
-
-session.state              // .idle, .requesting, .listening, .processing, .error
-session.partialText        // リアルタイムの部分テキスト
-session.transcript         // 確定テキスト
-
-let text = session.confirm() // テキスト確定 + リセット
-session.reset()              // リセット
-```
-
-## アーキテクチャ
-
-```
-VoiceInput (Core)
-├── Protocol/
-│   ├── SpeechRecognizer         # 認識エンジン抽象化プロトコル (Actor)
-│   ├── SpeechRecognitionResult  # .partial / .final 結果型
-│   └── SpeechRecognitionError   # エラー型
-├── Engine/
-│   ├── AppleSpeechRecognizer    # Apple Speech デフォルト実装
-│   └── PermissionRequester      # マイク・音声認識権限
-└── Session/
-    └── VoiceInputSession        # @Observable 状態管理
-
-VoiceInputUI (SwiftUI + DesignSystem)
-├── Button/
-│   └── VoiceInputButton         # マイクトグルボタン
-├── Inline/
-│   └── InlineTranscriptView     # インラインテキストプレビュー
-└── Overlay/
-    └── TranscriptOverlayModifier # .voiceInputOverlay() modifier
-```
+[**API リファレンスとガイド**](https://no-problem-dev.github.io/swift-voice-input/documentation/voiceinput/) —
+[Getting Started](https://no-problem-dev.github.io/swift-voice-input/documentation/voiceinput/gettingstarted/)、
+認識エンジンの差し替え、部分結果と確定結果の違いを含む。
 
 ## 要件
 
-| 要件 | バージョン |
-|------|-----------|
-| iOS | 17.0+ |
-| macOS | 14.0+ |
-| Swift | 6.2+ |
-| Xcode | 26.0+ |
+| iOS | macOS | Swift |
+|-----|-------|-------|
+| 17.0+ | 14.0+ | 6.2+ |
+
+## インストール
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/no-problem-dev/swift-voice-input.git", .upToNextMajor(from: "2.0.0")),
+]
+```
+
+必要な product を取る。`VoiceInput` はセッションと認識器、`VoiceInputUI` は
+SwiftUI コンポーネント。
+
+```swift
+.product(name: "VoiceInput", package: "swift-voice-input"),
+.product(name: "VoiceInputUI", package: "swift-voice-input"),
+```
+
+## コントリビュート
+
+[CONTRIBUTING.md](CONTRIBUTING.md) を参照。
 
 ## ライセンス
 
-MIT License — 詳細は [LICENSE](LICENSE) を参照。
-
-## リンク
-
-- [Issues](https://github.com/no-problem-dev/swift-voice-input/issues)
+MIT — [LICENSE](LICENSE) を参照。

@@ -1,32 +1,45 @@
 import Foundation
 
-/// 音声認識で発生しうるエラー
+/// Why voice input could not start, or could not continue.
 ///
-/// `SpeechRecognizer` および `VoiceInputSession` から throw / Result.failure で返される。
-/// `LocalizedError` に準拠しており、`errorDescription` でユーザー向けメッセージを提供する。
+/// The distinction that matters to a caller is retryability. The two denials are
+/// dead ends in-app — only the user can undo them, in Settings — while
+/// ``unavailable`` may clear on its own and ``engineFailure(_:)`` is usually
+/// worth one more attempt.
 ///
 /// ```swift
 /// switch error {
-/// case .microphoneDenied:
-///     // 設定アプリへ誘導
-/// case .speechRecognitionDenied:
-///     // 設定アプリへ誘導
+/// case .microphoneDenied, .speechRecognitionDenied:
+///     openSettings()        // retrying in-app cannot help
 /// case .unavailable:
-///     // 代替手段を提示
+///     offerKeyboardInput()  // may succeed later, or in another locale
 /// case .engineFailure(let message):
-///     // ログ記録
+///     log(message)
 /// }
 /// ```
 public enum SpeechRecognitionError: Error, Sendable, Equatable, LocalizedError {
-    /// マイク権限が拒否されている
+    /// The user refused microphone access, so no audio can be captured at all.
     case microphoneDenied
-    /// 音声認識権限が拒否されている
+
+    /// The user refused speech recognition, so audio is captured but cannot be transcribed.
+    ///
+    /// Worth separating from ``microphoneDenied`` because the two live under
+    /// different rows in Settings, and telling the user the wrong one wastes the trip.
     case speechRecognitionDenied
-    /// デバイスで音声認識が利用できない
+
+    /// Recognition is not available on this device for the locale that was asked for.
+    ///
+    /// Not necessarily permanent: it also covers a server-backed recogniser that
+    /// is offline and a language whose assets have not finished downloading.
     case unavailable
-    /// エンジン内部エラー
+
+    /// The recognition engine failed for a reason outside the cases above.
+    ///
+    /// The payload is the underlying engine's own message, which
+    /// ``errorDescription`` passes through unchanged.
     case engineFailure(String)
 
+    /// The message shown to the user when this error is presented.
     public var errorDescription: String? {
         switch self {
         case .microphoneDenied:
