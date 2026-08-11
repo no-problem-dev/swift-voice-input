@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Raised the swift-design-system pin to 4.0.0.
+
 ### Added
 
 - `.spi.yml`, so Swift Package Index builds and hosts the documentation.
