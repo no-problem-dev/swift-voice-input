@@ -46,8 +46,8 @@ struct DictationField: View {
 
 ## Documentation
 
-[**API reference and guides**](https://no-problem-dev.github.io/swift-voice-input/documentation/voiceinput/) —
-including [Getting Started](https://no-problem-dev.github.io/swift-voice-input/documentation/voiceinput/gettingstarted/),
+[**API reference and guides**](Sources/VoiceInput/Documentation.docc) —
+including [Getting Started](Sources/VoiceInput/Documentation.docc/GettingStarted.md),
 substituting a recognition engine, and what separates a partial result from a final one.
 
 ## Requirements
