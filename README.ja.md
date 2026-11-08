@@ -46,8 +46,8 @@ struct DictationField: View {
 
 ## ドキュメント
 
-[**API リファレンスとガイド**](https://no-problem-dev.github.io/swift-voice-input/documentation/voiceinput/) —
-[Getting Started](https://no-problem-dev.github.io/swift-voice-input/documentation/voiceinput/gettingstarted/)、
+[**API リファレンスとガイド**](Sources/VoiceInput/Documentation.docc) —
+[Getting Started](Sources/VoiceInput/Documentation.docc/GettingStarted.md)、
 認識エンジンの差し替え、部分結果と確定結果の違いを含む。
 
 ## 要件
